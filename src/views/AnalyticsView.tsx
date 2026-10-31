@@ -59,7 +59,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ departments }) => 
     if (!data) return;
 
     let csvContent = 'data:text/csv;charset=utf-8,';
-    csvContent += 'Date,Emergency Dept,ICU,MedSurg,Other Wards,Total Admissions\n';
+    csvContent += 'Date,Emergency & Casualty,Intensive Care Unit,General Medicine,Other Wards,Total Admissions\n';
 
     data.admissionsTrend.forEach((row: any) => {
       csvContent += `${row.date},${row.ed},${row.icu},${row.medsurg},${row.other},${row.total}\n`;

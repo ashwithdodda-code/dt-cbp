@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Department, Alert, AlertSeverity, AlertStatus } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { formatIndianDateTime } from '../config/hospitalProfile';
 import {
   AlertTriangle,
   Search,
@@ -38,9 +39,10 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
 
       const res = await fetch(`/api/alerts?${q.toString()}`);
       const data = await res.json();
-      setAlerts(data);
+      setAlerts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Error fetching alerts:', err);
+      setAlerts([]);
     } finally {
       setLoading(false);
     }
@@ -92,8 +94,9 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
     }
   };
 
-  const criticalCount = alerts.filter((a) => a.severity === 'critical' && a.status === 'active').length;
-  const warningCount = alerts.filter((a) => a.severity === 'warning' && a.status === 'active').length;
+  const safeAlerts = Array.isArray(alerts) ? alerts : [];
+  const criticalCount = safeAlerts.filter((a) => a.severity === 'critical' && a.status === 'active').length;
+  const warningCount = safeAlerts.filter((a) => a.severity === 'warning' && a.status === 'active').length;
 
   return (
     <div className="space-y-6">
@@ -180,12 +183,12 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
 
       {/* Alerts Feed */}
       <div className="space-y-3">
-        {alerts.length === 0 ? (
+        {safeAlerts.length === 0 ? (
           <div className="p-12 rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-center text-xs text-slate-500">
             No alerts found for the selected status. All department operating telemetry is nominal.
           </div>
         ) : (
-          alerts.map((alt) => {
+          safeAlerts.map((alt) => {
             const dept = departments.find((d) => d.id === alt.department_id);
             return (
               <div
@@ -209,9 +212,9 @@ export const AlertsView: React.FC<AlertsViewProps> = ({
                   <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-[11px]">
                     {alt.description}
                   </p>
-                  <div className="text-[10px] text-slate-400">
-                    Logged: {new Date(alt.created_at).toLocaleString()}
-                    {alt.resolved_at && ` • Resolved: ${new Date(alt.resolved_at).toLocaleString()}`}
+                  <div className="text-[10px] text-slate-400 font-mono">
+                    Logged: {formatIndianDateTime(alt.created_at)}
+                    {alt.resolved_at && ` • Resolved: ${formatIndianDateTime(alt.resolved_at)}`}
                   </div>
                 </div>
 

@@ -96,7 +96,7 @@ export const ForecastingView: React.FC<ForecastingViewProps> = ({ departments })
   // Combine recent actuals and future forecast points for the unified chart
   const combinedChartData = [
     ...recentActual.map((item, idx) => ({
-      time: new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: new Date(item.timestamp).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }),
       actual: item.admissions,
       forecast: null,
       lowerBound: null,
@@ -104,7 +104,7 @@ export const ForecastingView: React.FC<ForecastingViewProps> = ({ departments })
       type: 'Observed',
     })),
     ...(forecastData?.points.map((pt) => ({
-      time: `+${pt.hourOffset}h (${new Date(pt.targetTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`,
+      time: `+${pt.hourOffset}h (${new Date(pt.targetTime).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })})`,
       actual: null,
       forecast: pt.predictedAdmissions,
       lowerBound: pt.lowerBound,

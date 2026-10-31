@@ -16,32 +16,39 @@ interface AuthContextType {
 
 const DEMO_USERS = [
   {
-    label: 'Hospital Administrator',
-    email: 'admin@aihro.health',
+    label: 'Managing Director & Chief Radiologist (Admin)',
+    email: 'murali.radiology@lotus-jammikunta.in',
     role: 'admin' as UserRole,
-    name: 'Dr. Sarah Lin',
-    dept: 'Hospital Administration',
+    name: 'Dr. Ravikanti Murali, MBBS, MD (RD)',
+    dept: 'Lotus Diagnostic Centre & Administration',
   },
   {
-    label: 'ED Department Director',
-    email: 'manager.ed@aihro.health',
+    label: 'Senior Dermatologist & Clinical Director',
+    email: 'sindhu.derm@lotus-jammikunta.in',
     role: 'department_manager' as UserRole,
-    name: 'Marcus Vance, RN',
-    dept: 'Emergency Medicine',
+    name: 'Dr. Sindhu Ravikanti, MBBS, MD (DVL)',
+    dept: 'Lotus Skin Clinic & Dermatology',
   },
   {
-    label: 'ICU Critical Care Lead',
-    email: 'manager.icu@aihro.health',
+    label: 'Medical Superintendent (Admin)',
+    email: 'ramana.murthy@lotus-jammikunta.in',
+    role: 'admin' as UserRole,
+    name: 'Dr. P. Ramana Murthy, MBBS, MS',
+    dept: 'Medical Superintendent & Clinical Governance',
+  },
+  {
+    label: 'Casualty & Emergency In-Charge',
+    email: 'ananya.reddy@lotus-jammikunta.in',
     role: 'department_manager' as UserRole,
-    name: 'Dr. Elena Rostova',
-    dept: 'Intensive Care Unit',
+    name: 'Dr. Ananya Reddy, MBBS, MD',
+    dept: 'Emergency & Casualty Triage',
   },
   {
-    label: 'Bed & Flow Coordinator',
-    email: 'ops@aihro.health',
+    label: 'Head of Nursing & Bed Flow Coordinator',
+    email: 'nurse.lakshmi@lotus-jammikunta.in',
     role: 'operations_staff' as UserRole,
-    name: 'David Chen',
-    dept: 'Operations Command Center',
+    name: 'S. Lakshmi Bai, RN',
+    dept: 'Nursing & Ward Operations',
   },
 ];
 
@@ -52,14 +59,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const saved = localStorage.getItem('aihro_user');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // If saved user is from previous generic or old demo, upgrade to Lotus Jammikunta MD
+        if (
+          parsed.name === 'Dr. Sarah Lin' ||
+          parsed.email?.includes('aihro.health') ||
+          parsed.name === 'Dr. P. Ramana Murthy'
+        ) {
+          return {
+            id: 'usr_murali_md',
+            email: DEMO_USERS[0].email,
+            name: DEMO_USERS[0].name,
+            role: DEMO_USERS[0].role,
+            department: DEMO_USERS[0].dept,
+          };
+        }
+        return parsed;
       } catch (e) {
         // ignore
       }
     }
-    // Default active demo user: Hospital Administrator
+    // Default active demo user: Dr. Ravikanti Murali (Managing Director)
     return {
-      id: 'usr_admin_1',
+      id: 'usr_murali_md',
       email: DEMO_USERS[0].email,
       name: DEMO_USERS[0].name,
       role: DEMO_USERS[0].role,

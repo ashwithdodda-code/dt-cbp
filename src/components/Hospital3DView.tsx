@@ -117,16 +117,18 @@ export const Hospital3DView: React.FC<Hospital3DViewProps> = ({
     const deptMeshes: DeptMeshInfo[] = [];
 
     // Layout configuration in campus circle
+    // Layout configuration in campus circle (Telangana Hospital Wings)
     const layout = [
-      { code: 'ED', angle: 0, radius: 9, width: 4.8, depth: 4.5, height: 4.5, color: 0xef4444 },
-      { code: 'ICU', angle: (2 * Math.PI) / 5, radius: 9.5, width: 4.2, depth: 4.2, height: 6.8, color: 0xf59e0b },
-      { code: 'MEDSURG', angle: (4 * Math.PI) / 5, radius: 10, width: 5.5, depth: 5.0, height: 7.5, color: 0x3b82f6 },
-      { code: 'PEDS', angle: (6 * Math.PI) / 5, radius: 9, width: 4.0, depth: 4.0, height: 4.0, color: 0x10b981 },
-      { code: 'CARDIO', angle: (8 * Math.PI) / 5, radius: 9.2, width: 4.4, depth: 4.2, height: 5.5, color: 0x8b5cf6 },
+      { code: 'CASUALTY', altCode: 'ED', angle: 0, radius: 9, width: 4.8, depth: 4.5, height: 5.2, color: 0xef4444 },
+      { code: 'DERM', altCode: 'DERM', angle: (2 * Math.PI) / 6, radius: 9.2, width: 4.0, depth: 4.0, height: 4.2, color: 0xec4899 },
+      { code: 'RADIO', altCode: 'RADIO', angle: (4 * Math.PI) / 6, radius: 9.5, width: 4.4, depth: 4.4, height: 4.8, color: 0x6366f1 },
+      { code: 'ICU', altCode: 'ICU', angle: (6 * Math.PI) / 6, radius: 9.5, width: 4.2, depth: 4.2, height: 6.8, color: 0xdc2626 },
+      { code: 'GENMED', altCode: 'MEDSURG', angle: (8 * Math.PI) / 6, radius: 10, width: 5.5, depth: 5.0, height: 7.2, color: 0x0ea5e9 },
+      { code: 'SURGERY', altCode: 'SURGERY', angle: (10 * Math.PI) / 6, radius: 9.2, width: 4.6, depth: 4.4, height: 6.0, color: 0xf59e0b },
     ];
 
     layout.forEach((cfg) => {
-      const dept = deptsRef.current.find((d) => d.code === cfg.code) || {
+      const dept = deptsRef.current.find((d) => d.code === cfg.code || d.code === cfg.altCode) || {
         id: `dept_${cfg.code.toLowerCase()}`,
         name: cfg.code,
         code: cfg.code,

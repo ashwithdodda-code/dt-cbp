@@ -58,9 +58,15 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
 
       const res = await fetch(`/api/beds?${q.toString()}`);
       const data = await res.json();
-      setBeds(data);
+      if (Array.isArray(data)) {
+        setBeds(data);
+      } else {
+        console.error('Invalid response from /api/beds, expected array:', data);
+        setBeds([]);
+      }
     } catch (err) {
       console.error('Error fetching beds:', err);
+      setBeds([]);
     } finally {
       setLoading(false);
     }
@@ -169,10 +175,11 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
     }
   };
 
-  const total = beds.length;
-  const occupied = beds.filter((b) => b.status === 'occupied').length;
-  const available = beds.filter((b) => b.status === 'available').length;
-  const cleaning = beds.filter((b) => b.status === 'cleaning').length;
+  const safeBeds = Array.isArray(beds) ? beds : [];
+  const total = safeBeds.length;
+  const occupied = safeBeds.filter((b) => b.status === 'occupied').length;
+  const available = safeBeds.filter((b) => b.status === 'available').length;
+  const cleaning = safeBeds.filter((b) => b.status === 'cleaning').length;
 
   return (
     <div className="space-y-6">
@@ -275,8 +282,13 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
       </div>
 
       {/* Bed Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
-        {beds.map((bed) => {
+      {safeBeds.length === 0 ? (
+        <div className="p-8 text-center text-slate-400 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <p className="font-semibold text-xs">No beds found matching the filter criteria.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+          {safeBeds.map((bed) => {
           const dept = departments.find((d) => d.id === bed.department_id);
           return (
             <div
@@ -340,6 +352,7 @@ export const BedManagementView: React.FC<BedManagementViewProps> = ({
           );
         })}
       </div>
+    )}
 
       {/* Edit Bed Modal */}
       {editingBed && (

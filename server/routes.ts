@@ -184,9 +184,11 @@ apiRouter.get('/overview', async (req: Request, res: Response) => {
     const beds = queryAll(db, 'SELECT * FROM beds');
     const staff = queryAll(db, 'SELECT * FROM staff');
     const equipment = queryAll(db, 'SELECT * FROM equipment');
+    const lowConsumables = queryAll(db, 'SELECT id FROM consumables WHERE quantity_on_hand <= min_stock_level');
     const recommendations = queryAll(db, 'SELECT * FROM recommendations WHERE status = "pending"');
     const alerts = queryAll(db, 'SELECT * FROM alerts WHERE status = "active"');
     const history = queryAll<HistoricalRecord>(db, 'SELECT * FROM admissions_history');
+    const profile = queryOne(db, 'SELECT * FROM hospital_profile LIMIT 1');
 
     const totalBeds = beds.length;
     const occupiedBeds = beds.filter((b) => b.status === 'occupied').length;
@@ -195,7 +197,9 @@ apiRouter.get('/overview', async (req: Request, res: Response) => {
     const maintenanceBeds = beds.filter((b) => b.status === 'maintenance').length;
     const systemOccupancyPct = totalBeds > 0 ? Number(((occupiedBeds / totalBeds) * 100).toFixed(1)) : 0;
 
-    const availableNurses = staff.filter((s) => s.status === 'on_duty' || s.status === 'available_on_call').length;
+    const availableStaff = staff.filter((s) => s.is_active !== 0 && (s.leave_status === 'active' || !s.leave_status) && (s.status === 'on_duty' || s.status === 'available_on_call')).length;
+    const onDutyStaffCount = staff.filter((s) => s.is_active !== 0 && s.status === 'on_duty').length;
+    const availableNurses = staff.filter((s) => s.is_active !== 0 && (s.category === 'Nurse' || !s.category) && (s.status === 'on_duty' || s.status === 'available_on_call')).length;
     const availableCriticalEquipment = equipment.reduce((sum, e) => sum + e.available_qty, 0);
 
     // Compute department stats
@@ -218,7 +222,7 @@ apiRouter.get('/overview', async (req: Request, res: Response) => {
         predicted12h = 4;
       }
 
-      const dStaff = staff.filter((s) => s.department_id === d.id);
+      const dStaff = staff.filter((s) => s.department_id === d.id && s.is_active !== 0);
       const onDutyStaff = dStaff.filter((s) => s.status === 'on_duty').length;
 
       return {
@@ -226,6 +230,8 @@ apiRouter.get('/overview', async (req: Request, res: Response) => {
         name: d.name,
         code: d.code,
         color: d.color,
+        is_enabled: d.is_enabled !== 0 ? 1 : 0,
+        category: d.category || 'clinical',
         totalBeds: dTotal,
         occupiedBeds: dOccupied,
         availableBeds: dAvail,
@@ -240,9 +246,9 @@ apiRouter.get('/overview', async (req: Request, res: Response) => {
 
     const totalPredicted12h = Number(deptStats.reduce((sum, d) => sum + d.predicted12h, 0).toFixed(0));
 
-    // Emergency department surge assessment
-    const edDept = deptStats.find((d) => d.code === 'ED');
-    const edSurgeRisk = edDept ? edDept.surgeRisk : 'moderate';
+    // Emergency department / casualty surge assessment
+    const casualtyDept = deptStats.find((d) => d.code === 'CASUALTY' || d.code === 'ED');
+    const edSurgeRisk = casualtyDept ? casualtyDept.surgeRisk : 'moderate';
 
     res.json({
       kpis: {
@@ -253,12 +259,16 @@ apiRouter.get('/overview', async (req: Request, res: Response) => {
         cleaningBeds,
         maintenanceBeds,
         totalPredicted12h,
+        availableStaff,
+        onDutyStaffCount,
         availableNurses,
         availableCriticalEquipment,
+        lowStockConsumablesCount: lowConsumables.length,
         pendingApprovalsCount: recommendations.length,
         activeAlertsCount: alerts.length,
         edSurgeRisk,
       },
+      hospitalProfile: profile || null,
       departments: deptStats,
       recentAlerts: alerts.slice(0, 5),
       pendingRecommendations: recommendations.slice(0, 5).map((r) => ({
@@ -272,12 +282,100 @@ apiRouter.get('/overview', async (req: Request, res: Response) => {
   }
 });
 
+// 3b. Hospital Profile (Telangana Deployment)
+apiRouter.get('/hospital-profile', async (req: Request, res: Response) => {
+  try {
+    const db = await getDb();
+    const profile = queryOne(db, 'SELECT * FROM hospital_profile LIMIT 1');
+    res.json(profile || {
+      id: 'hosp_telangana_main',
+      name: 'Telangana Hospital Resource Centre',
+      expanded_name: 'AI-HRO Telangana | Hospital Resource Intelligence',
+      country: 'India',
+      state: 'Telangana',
+      city_district: 'Hyderabad',
+      currency: 'INR',
+      currency_symbol: '₹',
+      timezone: 'Asia/Kolkata',
+      date_format: 'DD-MM-YYYY',
+      time_format: 'IST',
+      contact_phone: '+91 40 2345 6789',
+      emergency_helpline: '108 / 102',
+      updated_at: new Date().toISOString()
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+apiRouter.put('/hospital-profile', async (req: Request, res: Response) => {
+  try {
+    const db = await getDb();
+    const { name, expanded_name, city_district, currency, currency_symbol, contact_phone, emergency_helpline, user_id, user_email } = req.body;
+    const existing = queryOne(db, 'SELECT id FROM hospital_profile LIMIT 1');
+    const id = existing ? existing.id : 'hosp_telangana_main';
+    const now = new Date().toISOString();
+
+    db.run(
+      `INSERT INTO hospital_profile (id, name, expanded_name, country, state, city_district, currency, currency_symbol, timezone, date_format, time_format, contact_phone, emergency_helpline, updated_at)
+       VALUES (?, ?, ?, 'India', 'Telangana', ?, ?, ?, 'Asia/Kolkata', 'DD-MM-YYYY', 'IST', ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         name=excluded.name,
+         expanded_name=excluded.expanded_name,
+         city_district=excluded.city_district,
+         currency=excluded.currency,
+         currency_symbol=excluded.currency_symbol,
+         contact_phone=excluded.contact_phone,
+         emergency_helpline=excluded.emergency_helpline,
+         updated_at=excluded.updated_at`,
+      [id, name || 'Telangana Hospital Resource Centre', expanded_name || 'AI-HRO Telangana | Hospital Resource Intelligence', city_district || 'Hyderabad', currency || 'INR', currency_symbol || '₹', contact_phone || '+91 40 2345 6789', emergency_helpline || '108 / 102', now]
+    );
+    saveDb();
+
+    logAudit(db, user_id || 'admin', user_email || 'admin@aihro.health', 'UPDATE_HOSPITAL_PROFILE', 'PROFILE', id, { name, city_district });
+
+    const updated = queryOne(db, 'SELECT * FROM hospital_profile WHERE id = ?', [id]);
+    res.json({ success: true, profile: updated });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 4. Departments
 apiRouter.get('/departments', async (req: Request, res: Response) => {
   try {
     const db = await getDb();
     const rows = queryAll(db, 'SELECT * FROM departments');
     res.json(rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+apiRouter.patch('/departments/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { is_enabled, surge_threshold_pct, baseline_staff, user_id, user_email } = req.body;
+    const db = await getDb();
+    const current = queryOne(db, 'SELECT * FROM departments WHERE id = ?', [id]);
+    if (!current) return res.status(404).json({ error: 'Department not found' });
+
+    const nextEnabled = is_enabled !== undefined ? (is_enabled ? 1 : 0) : current.is_enabled;
+    const nextSurge = surge_threshold_pct !== undefined ? Number(surge_threshold_pct) : current.surge_threshold_pct;
+    const nextStaff = baseline_staff !== undefined ? Number(baseline_staff) : current.baseline_staff;
+
+    db.run(
+      `UPDATE departments SET is_enabled = ?, surge_threshold_pct = ?, baseline_staff = ? WHERE id = ?`,
+      [nextEnabled, nextSurge, nextStaff, id]
+    );
+    saveDb();
+
+    logAudit(db, user_id || 'admin', user_email || 'admin@aihro.health', 'UPDATE_DEPARTMENT', 'DEPARTMENT', id, {
+      department: current.name,
+      is_enabled: nextEnabled,
+      surge_threshold_pct: nextSurge,
+    });
+    res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -385,14 +483,17 @@ apiRouter.patch('/beds/:id', async (req: Request, res: Response) => {
   }
 });
 
-// 6. Staff Management
+// 6. Staff Management (Telangana Multi-Category Clinical & Support Roster)
 apiRouter.get('/staff', async (req: Request, res: Response) => {
   try {
     const db = await getDb();
-    const { departmentId, status, role, search } = req.query;
+    const { departmentId, status, role, category, leaveStatus, includeInactive, search } = req.query;
     let sql = 'SELECT * FROM staff WHERE 1=1';
     const params: any[] = [];
 
+    if (includeInactive !== 'true') {
+      sql += ' AND (is_active IS NULL OR is_active = 1)';
+    }
     if (departmentId && departmentId !== 'all') {
       sql += ' AND department_id = ?';
       params.push(departmentId);
@@ -405,18 +506,83 @@ apiRouter.get('/staff', async (req: Request, res: Response) => {
       sql += ' AND role = ?';
       params.push(role);
     }
+    if (category && category !== 'all') {
+      sql += ' AND category = ?';
+      params.push(category);
+    }
+    if (leaveStatus && leaveStatus !== 'all') {
+      sql += ' AND leave_status = ?';
+      params.push(leaveStatus);
+    }
     if (search) {
-      sql += ' AND (name LIKE ? OR staff_code LIKE ?)';
+      sql += ' AND (name LIKE ? OR staff_code LIKE ? OR specialty LIKE ?)';
       const s = `%${search}%`;
-      params.push(s, s);
+      params.push(s, s, s);
     }
 
-    sql += ' ORDER BY name ASC';
-    const rows = queryAll(db, sql, params).map((s) => ({
-      ...s,
-      skills: JSON.parse(s.skills || '[]'),
-    }));
+    sql += ' ORDER BY CASE category WHEN "Doctor / Specialist" THEN 1 WHEN "Nurse" THEN 2 ELSE 3 END, name ASC';
+    const rows = queryAll(db, sql, params).map((s) => {
+      let skillsList: string[] = [];
+      try {
+        if (Array.isArray(s.skills)) {
+          skillsList = s.skills;
+        } else if (typeof s.skills === 'string') {
+          skillsList = JSON.parse(s.skills);
+        }
+      } catch {
+        skillsList = typeof s.skills === 'string' ? s.skills.split(',').map((x: string) => x.trim()).filter(Boolean) : [];
+      }
+      return {
+        ...s,
+        skills: Array.isArray(skillsList) ? skillsList : [],
+      };
+    });
     res.json(rows);
+  } catch (err: any) {
+    console.error('Error fetching staff in GET /staff:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+apiRouter.post('/staff', async (req: Request, res: Response) => {
+  try {
+    const { staff_code, name, department_id, role, category, specialty, shift, status, leave_status, max_workload, skills, assigned_room_or_equipment, user_id, user_email } = req.body;
+    if (!name || !department_id) {
+      return res.status(400).json({ error: 'Name and department are required' });
+    }
+
+    const db = await getDb();
+    const id = `staff_${Date.now()}`;
+    const code = staff_code || `STF-TS-${Date.now().toString().slice(-4)}`;
+    const cat = category || 'Nurse';
+    const maxWork = Number(max_workload) || 4;
+    const now = new Date().toISOString();
+
+    db.run(
+      `INSERT INTO staff (id, staff_code, name, department_id, role, category, specialty, shift, status, leave_status, current_workload, max_workload, skills, assigned_room_or_equipment, verification_disclaimer, is_active, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, 1, ?)`,
+      [
+        id,
+        code,
+        name,
+        department_id,
+        role || cat,
+        cat,
+        specialty || null,
+        shift || 'Day (08:00 - 16:00 IST)',
+        status || 'on_duty',
+        leave_status || 'active',
+        maxWork,
+        JSON.stringify(skills || []),
+        assigned_room_or_equipment || null,
+        'Academic demonstration personnel record',
+        now,
+      ]
+    );
+    saveDb();
+
+    logAudit(db, user_id || 'admin', user_email || 'admin@aihro.health', 'CREATE_STAFF', 'STAFF', id, { name, role: role || cat, department_id });
+    res.json({ success: true, id });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -425,7 +591,7 @@ apiRouter.get('/staff', async (req: Request, res: Response) => {
 apiRouter.patch('/staff/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status, current_workload, department_id, shift, user_id, user_email } = req.body;
+    const { status, current_workload, department_id, shift, leave_status, category, specialty, assigned_room_or_equipment, user_id, user_email } = req.body;
 
     const db = await getDb();
     const current = queryOne(db, 'SELECT * FROM staff WHERE id = ?', [id]);
@@ -433,28 +599,38 @@ apiRouter.patch('/staff/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Staff member not found' });
     }
 
-    const nextStatus = status || current.status;
+    const nextLeave = leave_status !== undefined ? leave_status : current.leave_status || 'active';
+    let nextStatus = status || current.status;
+
+    // Safety constraint: staff on leave cannot be placed on duty
+    if (nextLeave !== 'active' && nextStatus === 'on_duty') {
+      nextStatus = 'off_duty';
+    }
+
     const nextWorkload = current_workload !== undefined ? current_workload : current.current_workload;
     const nextDept = department_id || current.department_id;
     const nextShift = shift || current.shift;
+    const nextCategory = category || current.category || 'Nurse';
+    const nextSpecialty = specialty !== undefined ? specialty : current.specialty;
+    const nextAssignment = assigned_room_or_equipment !== undefined ? assigned_room_or_equipment : current.assigned_room_or_equipment;
 
     // Constraint: cannot exceed max workload
     if (nextWorkload > current.max_workload) {
-      return res.status(400).json({ error: `Assigned workload (${nextWorkload}) exceeds nurse safe capacity limit (${current.max_workload})` });
+      return res.status(400).json({ error: `Assigned workload (${nextWorkload}) exceeds safe capacity limit (${current.max_workload}). Burnout safety rule enforced.` });
     }
 
     db.run(
       `UPDATE staff
-       SET status = ?, current_workload = ?, department_id = ?, shift = ?, updated_at = ?
+       SET status = ?, current_workload = ?, department_id = ?, shift = ?, leave_status = ?, category = ?, specialty = ?, assigned_room_or_equipment = ?, updated_at = ?
        WHERE id = ?`,
-      [nextStatus, nextWorkload, nextDept, nextShift, new Date().toISOString(), id]
+      [nextStatus, nextWorkload, nextDept, nextShift, nextLeave, nextCategory, nextSpecialty, nextAssignment, new Date().toISOString(), id]
     );
     saveDb();
 
     logAudit(db, user_id || 'system', user_email || 'staff@aihro.health', 'UPDATE_STAFF', 'STAFF', id, {
       staff_code: current.staff_code,
       name: current.name,
-      changes: { nextStatus, nextWorkload, nextDept },
+      changes: { nextStatus, nextWorkload, nextDept, nextLeave },
     });
 
     res.json({ success: true });
@@ -558,6 +734,155 @@ apiRouter.post('/equipment/transfer', async (req: Request, res: Response) => {
       db.run('ROLLBACK');
       throw txErr;
     }
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 7b. Consumables & Medical Supplies (Telangana Hospital Stores)
+apiRouter.get('/consumables', async (req: Request, res: Response) => {
+  try {
+    const db = await getDb();
+    const { departmentId, category, status } = req.query;
+    let sql = 'SELECT * FROM consumables WHERE 1=1';
+    const params: any[] = [];
+
+    if (departmentId && departmentId !== 'all') {
+      sql += ' AND department_id = ?';
+      params.push(departmentId);
+    }
+    if (category && category !== 'all') {
+      sql += ' AND category = ?';
+      params.push(category);
+    }
+    if (status && status !== 'all') {
+      sql += ' AND status = ?';
+      params.push(status);
+    }
+
+    sql += ' ORDER BY CASE status WHEN "critical" THEN 1 WHEN "low_stock" THEN 2 ELSE 3 END, name ASC';
+    const rows = queryAll(db, sql, params);
+    res.json(rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+apiRouter.post('/consumables', async (req: Request, res: Response) => {
+  try {
+    const { item_code, name, category, department_id, quantity_on_hand, min_stock_level, unit, expiry_date, user_id, user_email } = req.body;
+    if (!name || !department_id) {
+      return res.status(400).json({ error: 'Name and department are required' });
+    }
+
+    const db = await getDb();
+    const id = `con_${Date.now()}`;
+    const code = item_code || `CON-${Date.now().toString().slice(-4)}`;
+    const qty = Number(quantity_on_hand) || 0;
+    const min = Number(min_stock_level) || 10;
+    const status = qty <= min * 0.5 ? 'critical' : qty <= min ? 'low_stock' : 'optimal';
+    const now = new Date().toISOString();
+
+    db.run(
+      `INSERT INTO consumables (id, item_code, name, category, department_id, quantity_on_hand, min_stock_level, unit, expiry_date, status, last_restocked_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, code, name, category || 'General Supplies', department_id, qty, min, unit || 'units', expiry_date || '2027-12-31', status, now]
+    );
+    saveDb();
+
+    logAudit(db, user_id || 'staff', user_email || 'staff@aihro.health', 'CREATE_CONSUMABLE', 'CONSUMABLE', id, { name, qty });
+    res.json({ success: true, id });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+apiRouter.post('/consumables/:id/reorder', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { quantity, notes, user_id, user_email } = req.body;
+    const qtyToAdd = Math.max(Number(quantity) || 50, 1);
+    const db = await getDb();
+    const item = queryOne(db, 'SELECT * FROM consumables WHERE id = ?', [id]);
+    if (!item) {
+      return res.status(404).json({ error: 'Consumable item not found' });
+    }
+
+    const newQty = item.quantity_on_hand + qtyToAdd;
+    const newStatus = newQty <= item.min_stock_level * 0.5 ? 'critical' : newQty <= item.min_stock_level ? 'low_stock' : 'optimal';
+    const now = new Date().toISOString();
+
+    db.run(
+      `UPDATE consumables SET quantity_on_hand = ?, status = ?, last_restocked_at = ? WHERE id = ?`,
+      [newQty, newStatus, now, id]
+    );
+    saveDb();
+
+    logAudit(db, user_id || 'staff', user_email || 'staff@aihro.health', 'REORDER_CONSUMABLE', 'CONSUMABLE', id, {
+      itemName: item.name,
+      addedQty: qtyToAdd,
+      newTotal: newQty,
+      notes,
+    });
+
+    res.json({ success: true, newQuantity: newQty, status: newStatus });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 7c. Consultation Rooms & Imaging Suites
+apiRouter.get('/rooms', async (req: Request, res: Response) => {
+  try {
+    const db = await getDb();
+    const { departmentId, status } = req.query;
+    let sql = 'SELECT * FROM rooms_and_slots WHERE 1=1';
+    const params: any[] = [];
+
+    if (departmentId && departmentId !== 'all') {
+      sql += ' AND department_id = ?';
+      params.push(departmentId);
+    }
+    if (status && status !== 'all') {
+      sql += ' AND status = ?';
+      params.push(status);
+    }
+
+    sql += ' ORDER BY room_number ASC';
+    const rows = queryAll(db, sql, params);
+    res.json(rows);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+apiRouter.patch('/rooms/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status, assigned_staff_id, current_slot_info, user_id, user_email } = req.body;
+    const db = await getDb();
+    const room = queryOne(db, 'SELECT * FROM rooms_and_slots WHERE id = ?', [id]);
+    if (!room) {
+      return res.status(404).json({ error: 'Room or suite not found' });
+    }
+
+    const nextStatus = status || room.status;
+    const nextStaff = assigned_staff_id !== undefined ? assigned_staff_id : room.assigned_staff_id;
+    const nextSlot = current_slot_info !== undefined ? current_slot_info : room.current_slot_info;
+    const now = new Date().toISOString();
+
+    db.run(
+      `UPDATE rooms_and_slots SET status = ?, assigned_staff_id = ?, current_slot_info = ?, updated_at = ? WHERE id = ?`,
+      [nextStatus, nextStaff, nextSlot, now, id]
+    );
+    saveDb();
+
+    logAudit(db, user_id || 'staff', user_email || 'staff@aihro.health', 'UPDATE_ROOM', 'ROOM', id, {
+      roomNumber: room.room_number,
+      status: nextStatus,
+      slot: nextSlot,
+    });
+    res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -683,6 +1008,8 @@ apiRouter.post('/recommendations/recalculate', async (req: Request, res: Respons
       skills: JSON.parse(s.skills || '[]'),
     }));
     const equipment = queryAll(db, 'SELECT * FROM equipment');
+    const consumables = queryAll(db, 'SELECT * FROM consumables');
+    const rooms = queryAll(db, 'SELECT * FROM rooms_and_slots');
     const history = queryAll<HistoricalRecord>(db, 'SELECT * FROM admissions_history');
 
     const forecastAdmissionsByDept: Record<string, number> = {};
@@ -700,6 +1027,8 @@ apiRouter.post('/recommendations/recalculate', async (req: Request, res: Respons
       beds,
       staff,
       equipment,
+      consumables,
+      rooms,
       forecastAdmissionsByDept,
     };
 
@@ -784,12 +1113,16 @@ apiRouter.post('/recommendations/:id/action', async (req: Request, res: Response
         skills: JSON.parse(s.skills || '[]'),
       }));
       const equipment = queryAll(db, 'SELECT * FROM equipment');
+      const consumables = queryAll(db, 'SELECT * FROM consumables');
+      const rooms = queryAll(db, 'SELECT * FROM rooms_and_slots');
 
       const val = validateApprovalPreconditions(parsedRec, {
         departments,
         beds,
         staff,
         equipment,
+        consumables,
+        rooms,
         forecastAdmissionsByDept: {},
       });
 
@@ -832,6 +1165,24 @@ apiRouter.post('/recommendations/:id/action', async (req: Request, res: Response
             [parsedRec.department_id, sup.candidateStaffId]
           );
           appliedChanges = { staffMobilized: { staffId: sup.candidateStaffId, assignedDept: parsedRec.department_id } };
+        }
+
+        if (parsedRec.resource_type === 'doctor_allocation' && (sup.candidateStaffId || sup.recommendedStaffId)) {
+          const docId = sup.candidateStaffId || sup.recommendedStaffId;
+          db.run(
+            `UPDATE staff SET status = 'on_duty', department_id = ?, current_workload = current_workload + 1 WHERE id = ?`,
+            [parsedRec.department_id, docId]
+          );
+          appliedChanges = { doctorMobilized: { staffId: docId, assignedDept: parsedRec.department_id, candidateName: sup.candidateName } };
+        }
+
+        if (parsedRec.resource_type === 'consumable_reorder' && sup.consumableId) {
+          const qty = overrideDetails?.reorderQuantity || sup.recommendedReorderQty || 50;
+          db.run(
+            `UPDATE consumables SET quantity_on_hand = quantity_on_hand + ?, status = 'optimal', last_restocked_at = ? WHERE id = ?`,
+            [qty, new Date().toISOString(), sup.consumableId]
+          );
+          appliedChanges = { consumableReplenished: { consumableId: sup.consumableId, addedQty: qty, itemCode: sup.itemCode } };
         }
 
         if (parsedRec.resource_type === 'bed_capacity' || parsedRec.resource_type === 'surge_mitigation') {

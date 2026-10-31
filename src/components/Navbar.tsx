@@ -44,27 +44,33 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onNavigate('overview')}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-teal-500/20 group-hover:scale-105 transition-transform">
-              <Activity className="w-5 h-5" />
+            {/* Lotus Emblem Icon matching photo */}
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-900 via-teal-800 to-teal-500 flex items-center justify-center text-white shadow-md shadow-teal-500/20 group-hover:scale-105 transition-transform border border-teal-400/30 relative overflow-hidden">
+              <span className="text-xl select-none" role="img" aria-label="Lotus">🪷</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-slate-900 dark:text-white tracking-tight text-lg">
-                  AI-HRO
+                <span className="font-extrabold text-slate-900 dark:text-white tracking-tight text-sm sm:text-base leading-tight">
+                  LOTUS <span className="text-teal-600 dark:text-teal-400 font-bold">DIAGNOSTIC & SKIN CLINIC</span>
                 </span>
-                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60">
-                  Hospital Core
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-700/60 uppercase tracking-wide">
+                  JAMMIKUNTA
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium hidden md:block">
-                Dynamic Resource Optimization Platform
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
+                Karimnagar District, Telangana • Dr. Ravikanti Murali & Dr. Sindhu Ravikanti
               </p>
             </div>
           </div>
 
-          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[11px] font-medium border border-amber-200/80 dark:border-amber-800/40">
+          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-teal-50/70 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 text-[11px] font-medium border border-teal-200/80 dark:border-teal-800/40">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
+            <span className="font-mono font-semibold">IST: {new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })} IST</span>
+          </div>
+
+          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[11px] font-medium border border-amber-200/80 dark:border-amber-800/40">
             <Info className="w-3.5 h-3.5" />
-            <span>Academic Demonstration • Simulated Telemetry</span>
+            <span>Academic Demonstration • Simulated Data</span>
           </div>
         </div>
 

@@ -19,7 +19,12 @@ import {
   Activity,
   Layers,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  MapPin,
+  Phone,
+  Clock,
+  Stethoscope,
+  Building2
 } from 'lucide-react';
 import { Hospital3DView } from '../components/Hospital3DView';
 
@@ -55,120 +60,232 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Banner & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200/80 dark:border-slate-800">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Hospital Operations Command Center
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Real-time bed utilization, 12-hour admission forecasting, and explainable AI allocation recommendations.
-          </p>
-        </div>
+      {/* Real Facility Showcase Feature Card: LOTUS DIAGNOSTIC CENTRE AND SKIN CLINIC JAMMIKUNTA */}
+      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-black via-slate-950 to-zinc-950 border border-slate-800/90 shadow-2xl text-white">
+        {/* Subtle decorative background light */}
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onRefresh}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors flex items-center gap-1.5 shadow-2xs"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
-            <span>Sync Telemetry</span>
-          </button>
-          <button
-            onClick={() => onNavigate('recommendations')}
-            className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm transition-colors flex items-center gap-1.5"
-          >
-            <BrainCircuit className="w-3.5 h-3.5" />
-            <span>Review Pending Approvals ({kpis.pendingApprovalsCount})</span>
-          </button>
+        <div className="relative p-5 sm:p-6 lg:p-7 flex flex-col lg:flex-row items-center gap-6">
+          {/* Facility Photo Frame */}
+          <div className="relative w-full lg:w-72 xl:w-80 shrink-0 rounded-2xl overflow-hidden border border-slate-700/80 shadow-2xl bg-slate-900 group">
+            <div className="aspect-[3/4] w-full overflow-hidden relative">
+              <img
+                src="/assets/aistudio/file_00000000200482118613bf59a05df0cd_d3602e18.png"
+                alt="Lotus Diagnostic Centre and Skin Clinic Jammikunta"
+                className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent pointer-events-none" />
+            </div>
+
+            <div className="absolute top-3 left-3 flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase bg-black/80 backdrop-blur-md text-emerald-400 border border-emerald-500/40 flex items-center gap-1.5 shadow-md">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Active Facility Node
+              </span>
+            </div>
+
+            <div className="absolute bottom-3 left-3 right-3 text-left">
+              <div className="flex items-center gap-1.5 text-white font-extrabold text-xs">
+                <Building2 className="w-3.5 h-3.5 text-teal-400" />
+                <span>Lotus Facility Campus</span>
+              </div>
+              <p className="text-[10px] text-slate-300 font-medium mt-0.5 line-clamp-1">
+                Main Road, Jammikunta • Karimnagar Dist
+              </p>
+            </div>
+          </div>
+
+          {/* Facility Information & Clinical Operations */}
+          <div className="flex-1 space-y-4 text-left w-full">
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-teal-500/20 text-teal-300 border border-teal-500/40">
+                  Telangana State Healthcare Node
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-slate-800 text-slate-300 border border-slate-700">
+                  Jammikunta Core • Karimnagar Dist
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  Single Hospital Deployment
+                </span>
+              </div>
+
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-snug">
+                LOTUS DIAGNOSTIC CENTRE AND SKIN CLINIC JAMMIKUNTA
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl">
+                Integrated diagnostic imaging, outpatient dermatology laser suites, 24/7 acute casualty triage, and AI-driven dynamic resource headroom optimization.
+              </p>
+            </div>
+
+            {/* Doctors & Clinical Directors Spotlight */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-teal-500 flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-md">
+                  RM
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-xs text-white truncate">Dr. Ravikanti Murali, MD (RD)</span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">HOD</span>
+                  </div>
+                  <div className="text-[11px] text-teal-400 font-semibold truncate">Managing Director & Chief Radiologist</div>
+                  <div className="text-[10px] text-slate-400 truncate">128-Slice CT • Doppler USG • Digital X-Ray</div>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-md">
+                  SR
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-xs text-white truncate">Dr. Sindhu Ravikanti, MD (DVL)</span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-pink-500/20 text-pink-300 border border-pink-500/30">Lead</span>
+                  </div>
+                  <div className="text-[11px] text-pink-400 font-semibold truncate">Senior Consultant Dermatologist & Director</div>
+                  <div className="text-[10px] text-slate-400 truncate">Lotus Skin Clinic • Biopsy • Phototherapy</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Facility Details & Actions */}
+            <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-400">
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-teal-400" />
+                  <span>Main Road, Beside Old Bus Stand, Jammikunta (505122)</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Emergency: 108 / 102 • Direct: +91 8727 255 678</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Casualty: 24/7 • Diagnostics: 08:30 - 20:30 IST</span>
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onRefresh}
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors flex items-center gap-1.5 shadow-2xs"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Sync Telemetry</span>
+                </button>
+                <button
+                  onClick={() => onNavigate('recommendations')}
+                  className="px-3.5 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold shadow-md shadow-teal-900/30 transition-colors flex items-center gap-1.5"
+                >
+                  <BrainCircuit className="w-3.5 h-3.5" />
+                  <span>Review Approvals ({kpis.pendingApprovalsCount})</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3.5">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {/* Bed Occupancy */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Bed Occupancy</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">Bed Occupancy</span>
             <BedDouble className="w-4 h-4 text-teal-500" />
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white">
             {kpis.systemOccupancyPct}%
           </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
-            <span>{kpis.occupiedBeds} occupied / {kpis.totalBeds}</span>
+          <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500">
+            <span>{kpis.occupiedBeds}/{kpis.totalBeds} in use</span>
             <span className="font-bold text-teal-600 dark:text-teal-400">{kpis.availableBeds} open</span>
           </div>
         </div>
 
         {/* 12h Predicted Admissions */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider">12h Forecast Inflow</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">12h Forecast</span>
             <TrendingUp className="w-4 h-4 text-cyan-500" />
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white">
             +{kpis.totalPredicted12h}
           </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
-            <span>Diurnal model</span>
-            <span className="font-bold text-cyan-600 dark:text-cyan-400">Incoming</span>
+          <div className="mt-2 text-[10px] text-cyan-600 dark:text-cyan-400 font-semibold">
+            Inflow projected
           </div>
         </div>
 
-        {/* Available Nurses */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+        {/* Available Staff */}
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Available Staff</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">Active Staff</span>
             <Users className="w-4 h-4 text-indigo-500" />
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white">
-            {kpis.availableNurses}
+            {kpis.availableStaff || kpis.availableNurses}
           </div>
-          <div className="mt-2 text-[11px] text-slate-500">
-            Active on-duty / on-call
+          <div className="mt-2 text-[10px] text-slate-500">
+            On-duty & surge pool
           </div>
         </div>
 
         {/* Equipment Margin */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Spare Equipment</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">Spare Apparatus</span>
             <Cpu className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white">
             {kpis.availableCriticalEquipment}
           </div>
-          <div className="mt-2 text-[11px] text-slate-500">
-            Units ready for deployment
+          <div className="mt-2 text-[10px] text-slate-500">
+            Ready for deployment
           </div>
         </div>
 
-        {/* ED Surge Risk */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+        {/* Consumables Low Stock Alert */}
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider">ED Surge Risk</span>
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Supplies Alert</span>
+            <AlertTriangle className={`w-4 h-4 ${(kpis.lowStockConsumablesCount || 0) > 0 ? 'text-amber-500' : 'text-emerald-500'}`} />
           </div>
-          <div className="text-2xl font-black capitalize text-amber-600 dark:text-amber-400">
-            {kpis.edSurgeRisk}
+          <div className={`text-2xl font-black ${(kpis.lowStockConsumablesCount || 0) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+            {kpis.lowStockConsumablesCount || 0}
           </div>
-          <div className="mt-2 text-[11px] text-slate-500">
-            Trigger threshold: 80%
+          <div className="mt-2 text-[10px] text-slate-500">
+            {(kpis.lowStockConsumablesCount || 0) > 0 ? 'Reorder threshold breached' : 'Buffer optimal'}
+          </div>
+        </div>
+
+        {/* Casualty Surge Risk */}
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider">Casualty Risk</span>
+            <AlertTriangle className="w-4 h-4 text-rose-500" />
+          </div>
+          <div className="text-2xl font-black capitalize text-rose-600 dark:text-rose-400">
+            {kpis.edSurgeRisk || kpis.surgeRisk}
+          </div>
+          <div className="mt-2 text-[10px] text-slate-500">
+            Threshold: 80%
           </div>
         </div>
 
         {/* Pending Approvals */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Pending Actions</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider">AI Indents</span>
             <BrainCircuit className="w-4 h-4 text-purple-500" />
           </div>
           <div className="text-2xl font-black text-purple-600 dark:text-purple-400">
             {kpis.pendingApprovalsCount}
           </div>
-          <div className="mt-2 text-[11px] text-slate-500">
-            Require human sign-off
+          <div className="mt-2 text-[10px] text-slate-500">
+            Requires clinician approval
           </div>
         </div>
       </div>

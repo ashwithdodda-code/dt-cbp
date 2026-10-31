@@ -45,9 +45,10 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
 
       const res = await fetch(`/api/recommendations?${q.toString()}`);
       const data = await res.json();
-      setRecommendations(data);
+      setRecommendations(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Error fetching recommendations:', err);
+      setRecommendations([]);
     } finally {
       setLoading(false);
     }
@@ -129,6 +130,8 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
     }
   };
 
+  const safeRecommendations = Array.isArray(recommendations) ? recommendations : [];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -193,12 +196,12 @@ export const RecommendationsView: React.FC<RecommendationsViewProps> = ({
 
       {/* Recommendations List */}
       <div className="space-y-4">
-        {recommendations.length === 0 ? (
+        {safeRecommendations.length === 0 ? (
           <div className="p-12 rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-center text-xs text-slate-500">
             No recommendations match the selected filters. Click "Recalculate Optimizer" to evaluate current telemetry.
           </div>
         ) : (
-          recommendations.map((rec) => {
+          safeRecommendations.map((rec) => {
             const dept = departments.find((d) => d.id === rec.department_id);
             return (
               <div

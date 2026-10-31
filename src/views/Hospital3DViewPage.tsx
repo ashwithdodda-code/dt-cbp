@@ -142,6 +142,38 @@ export const Hospital3DViewPage: React.FC<Hospital3DViewPageProps> = ({ departme
               ))}
             </div>
           </div>
+
+          {/* Physical Facility Architecture vs Digital Twin Card */}
+          <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-black via-slate-950 to-zinc-950 border border-slate-800 text-white shadow-xl text-xs space-y-3 p-4">
+            <div className="flex items-center gap-2 text-teal-400 font-bold text-xs uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+              <span>Physical Facility Architecture</span>
+            </div>
+
+            <div className="aspect-[4/3] rounded-xl overflow-hidden border border-slate-700/80 relative">
+              <img
+                src="/assets/aistudio/file_00000000200482118613bf59a05df0cd_d3602e18.png"
+                alt="Lotus Diagnostic Centre & Skin Clinic Jammikunta Facade"
+                className="w-full h-full object-cover object-top"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
+              <div className="absolute bottom-2 left-2.5 right-2.5">
+                <span className="text-[11px] font-extrabold text-white block">LOTUS DIAGNOSTIC CENTRE & SKIN CLINIC</span>
+                <span className="text-[10px] text-slate-300 block">Main Road • Jammikunta, Telangana</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 text-[11px] pt-1">
+              <div className="p-2 rounded-lg bg-white/5 border border-white/10">
+                <strong className="text-teal-400 block font-bold">Ground Floor: Lotus Diagnostic Centre</strong>
+                <span className="text-slate-300">128-Slice CT Scan, Color Doppler USG, Digital X-Ray, Casualty Triage, Sample Collection & Pharmacy</span>
+              </div>
+              <div className="p-2 rounded-lg bg-white/5 border border-white/10">
+                <strong className="text-pink-400 block font-bold">First Floor: Lotus Skin Clinic</strong>
+                <span className="text-slate-300">Dr. Sindhu Ravikanti OPD Consults, Phototherapy Laser Chamber, Skin Biopsy & Daycare Beds</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
